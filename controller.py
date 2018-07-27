@@ -11,10 +11,11 @@
 # Importing necessary libraries
 import rospy
 import sys, select, termios, tty
+from std_msgs.msg import String
 
 # User prompt message
 msg = """
-Control Your Turtlebot!
+Control Ohmni!
 ---------------------------
 Moving around:
         w    
@@ -41,12 +42,12 @@ def getKey():
 # Main function here
 if __name__ == "__main__":
 
-    # not even sure what is the point of this...
+    # Some sort of necessary declaration for input stream
     settings = termios.tcgetattr(sys.stdin)
 
     # Declare node name and topic to publish to
     rospy.init_node('ohmni_teleop')
-    #pub = rospy.Publisher('some_topic', std_msgs.msg.String, queue_size=5)
+    pub = rospy.Publisher('ohmni_teleop_controller', String, queue_size=5)
     
     # Prompting user input
     print(msg)
@@ -57,13 +58,14 @@ if __name__ == "__main__":
         if (key == '\x03'):
             break
         elif (key in validInput):
-            print("You input key is", key)
+            #print("You input key is", key)
+            pub.publish(key)
         elif (key == ''):
             pass
-        else:
-            print("Invalid input")
+        #else:
+        #    print("Invalid input")
 
-# Some mysteries remain here... I guess it has something to do with the stream input
+# Again, probably a wrapper of the settings above
 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
 
 
