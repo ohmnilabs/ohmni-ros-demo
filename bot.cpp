@@ -26,31 +26,30 @@
 #include "std_msgs/String.h"
 
 // Global struct so we can store socket information and such
-struct RosSock {
-    int* sock; // pointer to the socket
+struct Socket {
+    int sock; // pointer to the socket
     char buf[BUFFER_SIZE]; // message buffer side
     struct sockaddr_un server; // server configuration
 };
-struct RosSock _sock = {0}; // init struct to zeros now
+struct Socket _sock = {0}; // init struct to zeros now
 
 // Unix domain client side initialize
 int ud_client_init() {
 
      // Welp, create a socket first
-    int client_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (client_socket < 0) {
+    _sock.sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (_sock.sock < 0) {
         ROS_ERROR("UD: opening stream socket error");
         return -1;
     }
-    _sock.sock = &client_socket;
 
     // Configure the local file name so we can request the server
     _sock.server.sun_family = AF_UNIX;
     strcpy(_sock.server.sun_path, NAME);
 
     // Sanity check for connection error
-    if (connect(*(_sock.sock), (struct sockaddr *) &(_sock.server), sizeof(struct sockaddr_un)) < 0) {
-        close(*(_sock.sock));
+    if (connect(_sock.sock, (struct sockaddr *) &(_sock.server), sizeof(struct sockaddr_un)) < 0) {
+        close(_sock.sock);
         ROS_ERROR("UD: connecting stream socket error");
         return -1;
     }   
@@ -64,10 +63,9 @@ void keyCB(const std_msgs::String::ConstPtr& msg) {
     
     // Store the message into our buffer and write to socket
     strcpy(_sock.buf, msg->data.c_str());
-    write(*(_sock.sock), _sock.buf, sizeof(_sock.buf));
-    // if (write(*(_sock.sock), _sock.buf, sizeof(_sock.buf)) < 0) {
-    //     perror("UD: writing on stream socket error");
-    // }
+    if (write(_sock.sock, _sock.buf, sizeof(_sock.buf)) < 0) {
+        ROS_ERROR("UD: writing on stream socket error");
+    }
 }
 
 // Main function
