@@ -59,14 +59,15 @@ int ud_client_init() {
 // Callback function on subscription
 void keyCB(const std_msgs::String::ConstPtr& msg) {
 
-    // Store the message into our buffer
-    strcpy(_sock.buf, msg->data.c_str());
+    // Declare for debug purpose
+    ROS_INFO("Recieved: %s", msg->data.c_str());
     
-    // Declare for debug purpose now and write to socket
-    ROS_INFO("Recieved: %s", _sock.buf);
-    if (write(*(_sock.sock), _sock.buf, sizeof(_sock.buf)) < 0) {
-        perror("UD: writing on stream socket error");
-    }
+    // Store the message into our buffer and write to socket
+    strcpy(_sock.buf, msg->data.c_str());
+    write(*(_sock.sock), _sock.buf, sizeof(_sock.buf));
+    // if (write(*(_sock.sock), _sock.buf, sizeof(_sock.buf)) < 0) {
+    //     perror("UD: writing on stream socket error");
+    // }
 }
 
 // Main function
