@@ -10,6 +10,7 @@
 // Import necessary headers to setup the UNIX domain socket
 // really hope catkin_make would compile these...
 #include <iostream> // for exit(1)
+#include <vector>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -56,16 +57,17 @@ int ud_client_init() {
 }
 
 // Input message process
-void input_process(char* input) {
-    char[4 + 59] json_msg 
-    &(json_msg) = 0;
-    &(json_msg + 1) = 1;
-    &(json_msg + 2) = 5;
-    &(json_msg + 3) = 9;
-    &(json_msg + 4)= "{\"cmd\":\"move\",\"data\":{\"lspeed\":500,\"rspeed\":500,\"time\":10}}";
+void input_process(const char* input) {
+    std::vector<std::string> buffer;
+    std::string msg = "{\"cmd\":\"move\",\"data\":{\"lspeed\":500,\"rspeed\":500,\"time\":10}}";
+    std::string data_len = std::to_string(msg.length());
+    buffer.push_back((std::string)"01");
+    buffer.push_back(data_len);
+    buffer.push_back(msg);
 
-    strcpy(_sock.buf, json_msg);
-    if (write(_sock.sock, _sock.buf, sizeof(_sock.buf)) < 0) {
+//    strcpy(_sock.buf, json_msg);
+//    if (write(_sock.sock, _sock.buf, sizeof(_sock.buf)) < 0) {
+    if (write(_sock.sock, buffer, buffer.size())) < 0) {
         ROS_ERROR("UD: writing on stream socket error");
     }
 }
