@@ -55,17 +55,29 @@ int ud_client_init() {
     }   
 }
 
+// Input message process
+void input_process(char* input) {
+    char[4 + 59] json_msg 
+    &(json_msg) = 0;
+    &(json_msg + 1) = 1;
+    &(json_msg + 2) = 5;
+    &(json_msg + 3) = 9;
+    &(json_msg + 4)= "{\"cmd\":\"move\",\"data\":{\"lspeed\":500,\"rspeed\":500,\"time\":10}}";
+
+    strcpy(_sock.buf, json_msg);
+    if (write(_sock.sock, _sock.buf, sizeof(_sock.buf)) < 0) {
+        ROS_ERROR("UD: writing on stream socket error");
+    }
+}
+
 // Callback function on subscription
 void keyCB(const std_msgs::String::ConstPtr& msg) {
 
     // Declare for debug purpose
     ROS_INFO("Recieved: %s", msg->data.c_str());
     
-    // Store the message into our buffer and write to socket
-    strcpy(_sock.buf, msg->data.c_str());
-    if (write(_sock.sock, _sock.buf, sizeof(_sock.buf)) < 0) {
-        ROS_ERROR("UD: writing on stream socket error");
-    }
+    // Parse the input to process before sending it out to our socket
+    input_process(msg->data.c_str());
 }
 
 // Main function
