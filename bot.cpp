@@ -67,7 +67,7 @@ void input_process(const char* input) {
 
 //    strcpy(_sock.buf, json_msg);
 //    if (write(_sock.sock, _sock.buf, sizeof(_sock.buf)) < 0) {
-    if (write(_sock.sock, buffer, buffer.size())) < 0) {
+    if (write(_sock.sock, (void*)&buffer[0], sizeof(buffer)) < 0) {
         ROS_ERROR("UD: writing on stream socket error");
     }
 }
