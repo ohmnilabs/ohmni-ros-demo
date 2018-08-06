@@ -62,15 +62,20 @@ void input_process(const char* input) {
     char msg[] = "{\"cmd\":\"move\",\"data\":{\"lspeed\":500,\"rspeed\":500,\"time\":10}}";
 
     // Generate the data length and message type
-    char type[] = {0, 1}; //type = 1 for json now
-    char msg_len[] = {0, sizeof(msg)}; // length of the data msg only (the json)
+    uint16_t type = 1; //type = 1 for json now
+    uint16_t msg_len = sizeof(msg); // length of the data msg only (the json)
 
     // Message protocol is like this: 2 bytes for type (type=1 for json) + 2 bytes for data len + the actual data
     char buffer[4 + sizeof(msg)];
 
-    // Concatenate everything into a buffer to be sent out
-    strcpy(buffer, type);
-    strcat(buffer, msg_len);
+    // The first 4 bytes of the buffer will store 16-bit ints
+    // for msg type and json length
+    buffer[0] = (type) & 0xff;
+    buffer[1] = (type >> 8) & 0xff;
+    buffer[2] = (msg_len) & 0xff;
+    buffer[3] = (msg_len >> 8) & 0xff;
+
+    // Now concatenate the json msg itself into the buffer
     strcat(buffer, msg);
 
     // Write out the message now
