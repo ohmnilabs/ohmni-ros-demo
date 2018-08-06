@@ -29,7 +29,6 @@
 // Global struct so we can store socket information and such
 struct Socket {
     int sock; // pointer to the socket
-    char buf[BUFFER_SIZE]; // message buffer side
     struct sockaddr_un server; // server configuration
 };
 struct Socket _sock = {0}; // init struct to zeros now
@@ -58,16 +57,24 @@ int ud_client_init() {
 
 // Input message process
 void input_process(const char* input) {
-    std::vector<std::string> buffer;
-    std::string msg = "{\"cmd\":\"move\",\"data\":{\"lspeed\":500,\"rspeed\":500,\"time\":10}}";
-    std::string data_len = std::to_string(msg.length());
-    buffer.push_back((std::string)"01");
-    buffer.push_back(data_len);
-    buffer.push_back(msg);
 
-//    strcpy(_sock.buf, json_msg);
-//    if (write(_sock.sock, _sock.buf, sizeof(_sock.buf)) < 0) {
-    if (write(_sock.sock, (void*)&buffer[0], sizeof(buffer)) < 0) {
+    // JSON msg generated here 
+    char msg[] = "{\"cmd\":\"move\",\"data\":{\"lspeed\":500,\"rspeed\":500,\"time\":10}}";
+
+    // Generate the data length and message type
+    char type[] = {0, 1}; //type = 1 for json now
+    char msg_len[] = {0, sizeof(msg)}; // length of the data msg only (the json)
+
+    // Message protocol is like this: 2 bytes for type (type=1 for json) + 2 bytes for data len + the actual data
+    char buffer[4 + sizeof(msg)];
+
+    // Concatenate everything into a buffer to be sent out
+    strcpy(buffer, type);
+    strcat(buffer, msg_len);
+    strcat(buffer, msg);
+
+    // Write out the message now
+    if (write(_sock.sock, &buffer, sizeof(buffer)) < 0) {
         ROS_ERROR("UD: writing on stream socket error");
     }
 }
