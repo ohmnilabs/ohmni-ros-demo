@@ -16,6 +16,11 @@
 #include <sys/un.h>
 #include <unistd.h> // for socket in general
 
+// RapidJson stuffs in here
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
 // Unix domain socket name, hardcoded for now
 #define NAME "/opt/sockets/node.sock"
 
@@ -59,7 +64,41 @@ int ud_client_init() {
 void input_process(const char* input) {
 
     // JSON msg generated here 
-    char msg[] = "{\"cmd\":\"move\",\"data\":{\"lspeed\":500,\"rspeed\":500,\"time\":10}}";
+    const char json[] = "{\"cmd\":\"move\",\"lspeed\":500,\"rspeed\":500,\"time\":200}";
+    Document d;
+    d.Parse(json);
+
+    // 2. Modify it by DOM.
+    Value& l = d["lspeed"];
+    Value& r = d["rspeed"];
+
+    // Now the JSON needs to be modified accordingly
+    // to the user's input
+    if (input == 'w') { // going forward
+        l.SetInt(500);
+        r.SetInt(-500);
+    } 
+    else if (input == 's') { // going backward
+        l.SetInt(-500);
+        r.SetInt(500);
+    } 
+    else if (input == 'a') { // turning left
+        l.SetInt(-500);
+        r.SetInt(-500);
+    } 
+
+    // 3. Stringify the DOM
+    StringBuffer sb;
+    Writer<StringBuffer> writer(sb);
+    d.Accept(writer);
+
+    // Now printing to screen
+    std::string json_string = sb.GetString(); 
+    std::cout << json_string << std::endl;
+
+    // Converting the string back to array
+    char msg[json_string.length() + 1];
+    strcpy(msg, json_string.c_str());
 
     // Generate the data length and message type
     uint16_t type = 1; //type = 1 for json now
@@ -76,7 +115,7 @@ void input_process(const char* input) {
     buffer[3] = (msg_len >> 8) & 0xff;
 
     // Now concatenate the json msg itself into the buffer
-    strcat(buffer, msg);
+    std::copy(msg, msg + sizeof(msg), buffer+4);
 
     // Write out the message now
     if (write(_sock.sock, &buffer, sizeof(buffer)) < 0) {
