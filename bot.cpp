@@ -72,8 +72,28 @@ void ud_write_array(char * buffer, uint16_t buffer_len) {
     }
 }
 
-// Input message process, might need to modulate this process
-void input_process(const char* key) {
+// Packing everything into an array before sending out
+void msg_package(uint16_t type, uint16_t msg_len, char * msg) {
+    
+    // Message protocol is like this: 2 bytes for type (type=1 for json) + 2 bytes for data len + the actual data
+    char buffer[4 + msg_len];
+
+    // The first 4 bytes of the buffer will store 16-bit ints
+    // for msg type and json length
+    buffer[0] = (type) & 0xff;
+    buffer[1] = (type >> 8) & 0xff;
+    buffer[2] = (msg_len) & 0xff;
+    buffer[3] = (msg_len >> 8) & 0xff;
+
+    // Now concatenate the json msg itself into the buffer
+    std::copy(msg, msg + msg_len, buffer+4);
+
+    // Write out the message now
+    ud_write_array(buffer, sizeof(buffer));
+}
+
+// Handle base command input
+void handle_base_input(std::string input) {
 
     // JSON msg generated here 
     const char json[] = "{\"cmd\":\"move\",\"lspeed\":500,\"rspeed\":500,\"time\":200}";
@@ -83,14 +103,7 @@ void input_process(const char* key) {
     // 2. Modify it by DOM.
     Value& l = d["lspeed"];
     Value& r = d["rspeed"];
-
-    // Now the JSON needs to be modified accordingly
-    // to the user's input
-    std::string input = key; // note here this conversion has
-    // to be done for input check else it would not work.
-    // Not sure how std_msgs/catkin_make from ROS is parsing arguments
-    // because I can do direct char input check in g++ 5.4
-
+    
     if (input == "w") { // going forward
         l.SetInt(500);
         r.SetInt(-500);
@@ -117,25 +130,25 @@ void input_process(const char* key) {
     strcpy(msg, json_string.c_str());
     ROS_INFO("Sending %s", msg);
 
-    // Generate the data length and message type
-    uint16_t type = 1; //type = 1 for json now
-    uint16_t msg_len = sizeof(msg); // length of the data msg only (the json)
+    // Moving over to packaging
+    msg_package(1, sizeof(msg), msg);
+}
 
-    // Message protocol is like this: 2 bytes for type (type=1 for json) + 2 bytes for data len + the actual data
-    char buffer[4 + sizeof(msg)];
 
-    // The first 4 bytes of the buffer will store 16-bit ints
-    // for msg type and json length
-    buffer[0] = (type) & 0xff;
-    buffer[1] = (type >> 8) & 0xff;
-    buffer[2] = (msg_len) & 0xff;
-    buffer[3] = (msg_len >> 8) & 0xff;
 
-    // Now concatenate the json msg itself into the buffer
-    std::copy(msg, msg + sizeof(msg), buffer+4);
+// Input message process, might need to modulate this process
+void input_process(const char* key) {
 
-    // Write out the message now
-    ud_write_array(buffer, sizeof(buffer));
+    // Now the JSON needs to be modified accordingly
+    // to the user's input
+    std::string input = key; // note here this conversion has
+    // to be done for input check else it would not work.
+    // Not sure how std_msgs/catkin_make from ROS is parsing arguments
+    // because I can do direct char input check in g++ 5.4
+
+    // Base movement
+    if ((input == "w") || (input == "a") || (input == "s") || (input == "d"))
+        handle_base_input(input);
 }
 
 // Callback function on subscription
