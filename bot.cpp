@@ -41,6 +41,13 @@ struct Socket {
 };
 struct Socket _sock = {0}; // init struct to zeros now
 
+// Global struct so we can store control variable for the neck
+struct Neck {
+    int pos; // current position of the neck
+    bool isWake; // is the neck awake?
+};
+struct Neck _neck = {0}; // init struct to zeros now
+
 // Unix domain client side initialize
 int ud_client_init() {
 
@@ -104,6 +111,7 @@ void handle_base_input(std::string input) {
     Value& l = d["lspeed"];
     Value& r = d["rspeed"];
     
+    // Processing the JSON
     if (input == "w") { // going forward
         l.SetInt(500);
         r.SetInt(-500);
@@ -134,7 +142,83 @@ void handle_base_input(std::string input) {
     msg_package(1, sizeof(msg), msg);
 }
 
+// Handle neck initialization (wake/sleep)
+void handle_neck_init() {
 
+    // JSON msg generated here
+    const char json[] = "{\"cmd\":\"wakeHead\"}";
+    Document d;
+    d.Parse(json);
+
+    // 2. Modify it by DOM.
+    Value& p = d["cmd"];
+
+    // Processing the JSON
+    if (_neck.isWake) { // already awake, go to sleep
+        _neck.isWake = false;
+        d.SetString("restHead");
+        _neck.pos = 658;
+    }
+    else // else wake up and update pos
+        _neck.pos = 480;
+
+    // 3. Stringify the DOM
+    StringBuffer sb;
+    Writer<StringBuffer> writer(sb);
+    d.Accept(writer);
+
+    // Now printing to screen
+    std::string json_string = sb.GetString(); 
+
+    // Converting the string back to array
+    char msg[json_string.length() + 1];
+    strcpy(msg, json_string.c_str());
+    ROS_INFO("Sending %s", msg);
+
+    // Moving over to packaging
+    msg_package(1, sizeof(msg), msg);
+}
+
+// Handle neck command input
+void handle_neck_input(std::string input) {
+
+    // JSON msg generated here
+    const char json[] = "{\"cmd\":\"setNeckPosition\",\"pos\":480,\"ival\":40}";
+    Document d;
+    d.Parse(json);
+
+    // 2. Modify it by DOM.
+    Value& p = d["pos"];
+
+    // Processing the JSON
+    if (input == "r") { // looking up and bound
+        _neck.pos += 5;
+        if (_neck.pos > 675) _neck.pos = 675;
+        p.SetInt(_neck.pos);
+    }
+    else if (input == "f") { // looking down and bound
+        _neck.pos -= 5;
+        if (_neck.pos < 265) _neck.pos = 265;
+        p.SetInt(_neck.pos);
+    }
+
+    // 3. Stringify the DOM
+    StringBuffer sb;
+    Writer<StringBuffer> writer(sb);
+    d.Accept(writer);
+
+    // Now printing to screen
+    std::string json_string = sb.GetString(); 
+
+    // Converting the string back to array
+    char msg[json_string.length() + 1];
+    strcpy(msg, json_string.c_str());
+    ROS_INFO("Sending %s", msg);
+
+    // Moving over to packaging
+    msg_package(1, sizeof(msg), msg);
+
+}
 
 // Input message process, might need to modulate this process
 void input_process(const char* key) {
@@ -149,6 +233,14 @@ void input_process(const char* key) {
     // Base movement
     if ((input == "w") || (input == "a") || (input == "s") || (input == "d"))
         handle_base_input(input);
+
+    // Wake/sleep neck
+    if (input == "q")
+        handle_neck_init();
+
+    // Neck movement
+    if ((input == "r") || (input == "f") || (input == "q"))
+        handle_neck_input(input);
 }
 
 // Callback function on subscription
