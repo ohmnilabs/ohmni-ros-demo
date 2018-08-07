@@ -31,6 +31,9 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
+// We are gonna use the RapidJson namespace here
+using namespace rapidjson;
+
 // Global struct so we can store socket information and such
 struct Socket {
     int sock; // pointer to the socket
@@ -74,15 +77,15 @@ void input_process(const char* input) {
 
     // Now the JSON needs to be modified accordingly
     // to the user's input
-    if (input == 'w') { // going forward
+    if (input == "w") { // going forward
         l.SetInt(500);
         r.SetInt(-500);
     } 
-    else if (input == 's') { // going backward
+    else if (input == "s") { // going backward
         l.SetInt(-500);
         r.SetInt(500);
     } 
-    else if (input == 'a') { // turning left
+    else if (input == "a") { // turning left
         l.SetInt(-500);
         r.SetInt(-500);
     } 
