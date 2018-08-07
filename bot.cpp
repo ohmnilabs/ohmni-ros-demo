@@ -80,7 +80,20 @@ void ud_write_array(char * buffer, uint16_t buffer_len) {
 }
 
 // Packing everything into an array before sending out
-void msg_package(uint16_t type, uint16_t msg_len, char * msg) {
+void msg_package(Document& d, uint16_t type) {
+
+    // Stringify the DOM
+    StringBuffer sb;
+    Writer<StringBuffer> writer(sb);
+    d.Accept(writer);
+
+    // Now getting the string from DOM
+    std::string json_string = sb.GetString(); 
+
+    // Converting the string back to array
+    char msg[json_string.length() + 1];
+    strcpy(msg, json_string.c_str());
+    uint16_t msg_len = sizeof(msg);
     
     // Message protocol is like this: 2 bytes for type (type=1 for json) + 2 bytes for data len + the actual data
     char buffer[4 + msg_len];
@@ -125,21 +138,8 @@ void handle_base_input(std::string input) {
         r.SetInt(-500);
     } 
 
-    // 3. Stringify the DOM
-    StringBuffer sb;
-    Writer<StringBuffer> writer(sb);
-    d.Accept(writer);
-
-    // Now printing to screen
-    std::string json_string = sb.GetString(); 
-
-    // Converting the string back to array
-    char msg[json_string.length() + 1];
-    strcpy(msg, json_string.c_str());
-    ROS_INFO("Sending %s", msg);
-
     // Moving over to packaging
-    msg_package(1, sizeof(msg), msg);
+    msg_package(d, 1);
 }
 
 // Handle neck initialization (wake/sleep)
@@ -162,21 +162,8 @@ void handle_neck_init() {
     else // else wake up and update pos
         _neck.pos = 480;
 
-    // 3. Stringify the DOM
-    StringBuffer sb;
-    Writer<StringBuffer> writer(sb);
-    d.Accept(writer);
-
-    // Now printing to screen
-    std::string json_string = sb.GetString(); 
-
-    // Converting the string back to array
-    char msg[json_string.length() + 1];
-    strcpy(msg, json_string.c_str());
-    ROS_INFO("Sending %s", msg);
-
     // Moving over to packaging
-    msg_package(1, sizeof(msg), msg);
+    msg_package(d, 1);
 }
 
 // Handle neck command input
@@ -202,21 +189,8 @@ void handle_neck_input(std::string input) {
         p.SetInt(_neck.pos);
     }
 
-    // 3. Stringify the DOM
-    StringBuffer sb;
-    Writer<StringBuffer> writer(sb);
-    d.Accept(writer);
-
-    // Now printing to screen
-    std::string json_string = sb.GetString(); 
-
-    // Converting the string back to array
-    char msg[json_string.length() + 1];
-    strcpy(msg, json_string.c_str());
-    ROS_INFO("Sending %s", msg);
-
     // Moving over to packaging
-    msg_package(1, sizeof(msg), msg);
+    msg_package(d, 1);
 
 }
 
