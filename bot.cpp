@@ -63,8 +63,8 @@ int ud_client_init() {
     }   
 }
 
-// Input message process
-void input_process(const char* input) {
+// Input message process, might need to modulate this process
+void input_process(const char* key) {
 
     // JSON msg generated here 
     const char json[] = "{\"cmd\":\"move\",\"lspeed\":500,\"rspeed\":500,\"time\":200}";
@@ -77,6 +77,11 @@ void input_process(const char* input) {
 
     // Now the JSON needs to be modified accordingly
     // to the user's input
+    std::string input = key; // note here this conversion has
+    // to be done for input check else it would not work.
+    // Not sure how std_msgs/catkin_make from ROS is parsing arguments
+    // because I can do direct char input check in g++ 5.4
+
     if (input == "w") { // going forward
         l.SetInt(500);
         r.SetInt(-500);
@@ -101,6 +106,7 @@ void input_process(const char* input) {
     // Converting the string back to array
     char msg[json_string.length() + 1];
     strcpy(msg, json_string.c_str());
+    ROS_INFO("Sending %s", msg);
 
     // Generate the data length and message type
     uint16_t type = 1; //type = 1 for json now
