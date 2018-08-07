@@ -63,6 +63,15 @@ int ud_client_init() {
     }   
 }
 
+// Write array to socket
+void ud_write_array(char * buffer, uint16_t buffer_len) {
+
+    // Write to socket with sanity check
+    if (write(_sock.sock, buffer, buffer_len) < 0) {
+        ROS_ERROR("UD: writing on stream socket error");
+    }
+}
+
 // Input message process, might need to modulate this process
 void input_process(const char* key) {
 
@@ -126,9 +135,7 @@ void input_process(const char* key) {
     std::copy(msg, msg + sizeof(msg), buffer+4);
 
     // Write out the message now
-    if (write(_sock.sock, &buffer, sizeof(buffer)) < 0) {
-        ROS_ERROR("UD: writing on stream socket error");
-    }
+    ud_write_array(buffer, sizeof(buffer));
 }
 
 // Callback function on subscription
