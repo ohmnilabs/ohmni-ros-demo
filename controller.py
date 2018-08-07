@@ -20,12 +20,15 @@ Control Ohmni!
 Moving around:
         w    
    a    s    d
+q : wake/rest neck
 r/f : look up and down
+Current neck status: rest
 CTRL-C to quit
 """
 
 # List of valid inputs
-validInput = ['a', 'w', 'd', 's', 'r', 'f'];
+validInput = ['a', 'w', 'd', 's', 'r', 'f', 'q']
+neckAwake = False
 
 # Getting stream of user input from the keyboard
 def getKey():
@@ -58,7 +61,14 @@ if __name__ == "__main__":
         if (key == '\x03'):
             break
         elif (key in validInput):
-            #print("You input key is", key)
+        #    print("You input key is", key)
+            if (key == 'q'):
+                if neckAwake:
+                    neckAwake = False;
+                    print("Current neck status: rest")
+                else:
+                    neckAwake = True;
+                    print("Current neck status: wake")
             pub.publish(key)
         elif (key == ''):
             pass
