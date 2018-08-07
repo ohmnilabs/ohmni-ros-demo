@@ -146,21 +146,21 @@ void handle_base_input(std::string input) {
 void handle_neck_init() {
 
     // JSON msg generated here
-    const char json[] = "{\"cmd\":\"wakeHead\"}";
+    const char wake[] = "{\"cmd\":\"wakeHead\"}";
+    const char rest[] = "{\"cmd\":\"restHead\"}";
     Document d;
-    d.Parse(json);
-
-    // 2. Modify it by DOM.
-    Value& p = d["cmd"];
 
     // Processing the JSON
     if (_neck.isWake) { // already awake, go to sleep
         _neck.isWake = false;
-        d.SetString("restHead");
+        d.Parse(rest);
         _neck.pos = 658;
     }
-    else // else wake up and update pos
+    else { // else wake up and update pos
+        _neck.isWake = true;
+        d.Parse(wake);
         _neck.pos = 480;
+    }
 
     // Moving over to packaging
     msg_package(d, 1);
@@ -179,12 +179,12 @@ void handle_neck_input(std::string input) {
 
     // Processing the JSON
     if (input == "r") { // looking up and bound
-        _neck.pos += 5;
+        _neck.pos += 8;
         if (_neck.pos > 675) _neck.pos = 675;
         p.SetInt(_neck.pos);
     }
     else if (input == "f") { // looking down and bound
-        _neck.pos -= 5;
+        _neck.pos -= 8;
         if (_neck.pos < 265) _neck.pos = 265;
         p.SetInt(_neck.pos);
     }
