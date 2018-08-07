@@ -94,7 +94,6 @@ void input_process(const char* input) {
 
     // Now printing to screen
     std::string json_string = sb.GetString(); 
-    std::cout << json_string << std::endl;
 
     // Converting the string back to array
     char msg[json_string.length() + 1];
